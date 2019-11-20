@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Overwatch Randomizer</title>
+</head>
+    <body>
+        <div id="heroName">Overwatch Random Hero Picker</div>
+        <div id="arrow"></div>
+        <div id="container"></div>
+        <button id="roll">Roll</button>
+    </body>
+
+    <style>
+        @font-face{
+            font-family: overwatch-italic;
+            src: url(bignoodletoo.woff);
+        }
+        @font-face{
+            font-family: overwatch;
+            src: url(koverwatch.ttf);
+        }
+  
+        body{
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url("https://static.playoverwatch.com/media/wallpaper/logo-burst-wide.jpg");
+            background-size: cover;
+        }
+
+        #heroName{
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            height: 20%;
+            font-size: 8em;
+            color: silver;
+            text-shadow: 1px 1px grey;
+            font-family: overwatch-italic;
+            text-align: center;
+        }
+
+        #arrow{
+            position: absolute;
+            width: 5vw;
+            height: 5vw;
+            left: 47.5vw;
+            top: 22vh;
+            background-image: url("arrow.png");
+            background-size: contain;
+            background-repeat: no-repeat;
+            z-index: 100;
+        }
+
+        #container{
+            display: inline-block;
+            position: relative;
+            margin-top: 30vh; 
+            width: 100vw;
+            height: 35vh;
+            background-color: rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+        }
+
+        #container .hero{
+            display: inline-block;
+            position: absolute;
+            width: 20%;
+            height: 100%;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: right; 
+            border-left: 1px solid silver;
+            border-right: 1px solid silver;
+        }
+
+        #container .hero .heroName{
+            font-size: 4em;
+            font-family: overwatch-italic;
+            margin-top: 15%;
+            color: silver;
+            text-shadow: 1px 1px grey;
+        }
+
+        #roll{
+            font-size: 4em;
+            font-family: overwatch-italic;
+            background-color: orange;
+            border: 1px solid orange;
+            box-shadow: 1px 1px 2px 2px rgb(209, 136, 0);
+            color: white;
+            text-shadow: 1px 1px grey;
+            width: 10%;
+            height: 8%;
+            margin-top: 6%;
+            margin-left: 45%;
+        }
+
+        #roll:active{
+            box-shadow: 0px 0px 2px 2px orange;
+        }
+
+    </style>
+
+    <script type="text/javascript">
+
+        let heroes = ["Mercy","Reaper","Torbjorn","Symmetra","Doomfist","Hanzo","Ana","Zarya","Roadhog","Tracer","Bastion","Winston","Moira","Dva","Reinhardt","Soldier-76","Brigitte","Lucio","Mei","Baptiste","Ashe","Pharah","Zenyatta","Mccree","Widowmaker","Wrecking-ball","Junkrat","Genji","Sombra","Orisa"];
+        let elements = [];
+        let container = document.getElementById("container");
+        let width = document.getElementsByTagName("body")[0].clientWidth;
+
+        function generate(){
+            container.innerHTML = "";
+            for(let i = 0; i < heroes.length; i++){
+                let element = document.createElement("div");
+                element.className = "hero";
+                element.style.backgroundImage = "url('https://d1u1mce87gyfbn.cloudfront.net/hero/" + heroes[i].toLowerCase() + "/hero-select-portrait.png')";
+                element.style.left = (20*i)+"vw";
+
+                let elementText = document.createElement("div");
+                elementText.className = "heroName";
+                elementText.innerHTML = heroes[i];
+                element.appendChild(elementText);
+
+                container.appendChild(element);
+                elements.push(element);
+            }   
+        }
+
+        generate();
+
+        let interval = null;
+        let velocity = 12;
+        let drag = 0.001;
+        let rollButton = document.getElementById("roll");
+        rollButton.addEventListener("click", function(){
+            velocity = 12;
+            rollButton.style.visibility = "hidden";
+            velocity += (Math.random()*12)-6;
+            console.log("Velocity: " + velocity);
+            interval = setInterval(function(){
+                let left, width;
+                let widthFactor = container.clientWidth*0.20;
+                for(let i = 0; i < elements.length; i++){
+                    left = parseFloat(elements[i].style.left);
+                    width = parseFloat(elements[i].clientWidth);
+                    elements[i].style.left = (left-(velocity)) + "vw";
+                    if(left <= -20){
+                        let lastLeft = getLastLeft();
+                        elements[i].style.left = lastLeft + "vw";
+                    } 
+                    velocity-=drag;
+                    if(velocity < 0){
+                        document.getElementById("heroName").innerHTML = getClosestHero(elements);
+                        rollButton.style.visibility = "visible";
+                        clearInterval(interval);
+                    }
+                }
+            }, 10);
+        });
+
+        function getLastLeft(){
+            let furthest = 0;
+            for(let i = 0; i < elements.length; i++){
+                if(elements[i].offsetLeft > elements[furthest].offsetLeft){
+                    furthest = i;
+                }
+            }
+            let left = parseFloat(elements[furthest].style.left);
+            let pageWidth = container.clientWidth;
+            let width = ((elements[furthest].offsetWidth / pageWidth)-0.0025) * 100;
+            return (left+width);
+        }
+
+        function getClosestHero(widthFactor){
+            let arrow = document.getElementById("arrow");
+            let arrowLeft = arrow.offsetLeft + (arrow.offsetWidth/2);
+            for(let i = 0; i < elements.length; i++){
+                let element = elements[i];
+                if(arrowLeft < element.offsetLeft + element.offsetWidth){
+                    if(arrowLeft > element.offsetLeft){
+                        console.log(i + ": " + heroes[i]);
+                        return heroes[i];
+                    }
+                }
+            }
+            return null;
+        }
+
+    </script>
+
+</html>
